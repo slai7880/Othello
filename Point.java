@@ -6,6 +6,8 @@ the largest index of the point[]. In terms of point[], the 0 index indicates wha
 displayed to the user, the others are for AI, with the indexes indicating the level the
 AI is currently on. 
 
+Sha Lai
+
 */
 
 import java.util.*;

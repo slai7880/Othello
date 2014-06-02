@@ -5,6 +5,8 @@ and then constructs an Idea object for each one. At last it picks the Idea with 
 utility to assign. If there is a tie, it would randomly choose one. Also it generates a file
 to help further study of AI's strategy.
 
+Sha Lai
+
 */
 
 import java.util.*;
@@ -30,7 +32,7 @@ public class AICore {
    private static Date date;
    private static final String DATE_FORMAT = "yyyyMMddHHmmss";
    
-   public AICore(Map<Integer, Point> board, String player, int level) throws FileNotFoundException {
+   public AICore(Map<Integer, Point> board, String player, int level) throws FileNotFoundException, IOException {
       analyzer = new Analyzer(board);
       this.board = board;
       r = new Random();
@@ -40,7 +42,12 @@ public class AICore {
       String currentDate = dateFormat.format(new Date());
       
       String fileName = dateFormat.format(new Date()) + ".record";
+      File dir = new File(FILE_DIRECTORY);
+      if (!dir.isDirectory()) {
+         dir.mkdir();
+      }
       File file = new File(FILE_DIRECTORY + fileName);
+
       output = new PrintStream(file);
       
       board.get(44).assume("X", STARTING_LEVEL);

@@ -8,6 +8,8 @@ AI s*cks, it only consider the weight of each spot and the opponent's mobility. 
 prune the tree. If the user sets the level higher than 5, the system will be too busy(the AI record
 file will be like 10M). Therefore I will keep updating it.
 
+Sha Lai
+
 */
 
 import java.util.*;

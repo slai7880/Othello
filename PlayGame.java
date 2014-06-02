@@ -6,6 +6,8 @@ that Java API tells me that swing tools are bound to be thread unsafe(> . <#). S
 those issues, anytime I bump into a thread problem, I just set a 10ms delay. Still this class contains a lot of bad style
 codes. And maybe I should combine the three panels together.
 
+Sha Lai
+
 */
 
 import java.util.*;

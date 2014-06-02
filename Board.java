@@ -1,5 +1,9 @@
 /* This class stores the board, including the methods that tell the status
-   of the board. */
+   of the board. 
+   
+   Sha Lai
+   
+   */
 
 import java.util.*;
 import java.io.*;

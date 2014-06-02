@@ -1,7 +1,11 @@
 /* This is one of the most important class in this project. It offers a powerful
    checking method for almost all other classes. The two major testing methods
    do not return boolean values. Instead they return integers. The programs calling
-   that call the two methods must do the boolean. */
+   that call the two methods must do the boolean.
+   
+Sha Lai
+   
+*/
 
 import java.util.*;
 

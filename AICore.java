@@ -5,6 +5,10 @@ and then constructs an Idea object for each one. At last it picks the Idea with 
 utility to assign. If there is a tie, it would randomly choose one. Also it generates a file
 to help further study of AI's strategy.
 
+The appproaches that this AI has so far:
+1. (0.6)Min-Max Search
+2. (0.4)Computing the Opponent's Mobility
+
 Sha Lai
 
 */
@@ -14,7 +18,7 @@ import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
-public class AICore {
+public class AICore implements BasicInfo {
    private static Map<Integer, Point> board;
    private String player;
    private String oppo;
@@ -50,10 +54,10 @@ public class AICore {
 
       output = new PrintStream(file);
       
-      board.get(44).assume("X", STARTING_LEVEL);
-      board.get(45).assume("O", STARTING_LEVEL);
-      board.get(55).assume("X", STARTING_LEVEL);
-      board.get(54).assume("O", STARTING_LEVEL);
+      board.get(44).assume(P1, STARTING_LEVEL);
+      board.get(45).assume(P2, STARTING_LEVEL);
+      board.get(55).assume(P1, STARTING_LEVEL);
+      board.get(54).assume(P2, STARTING_LEVEL);
    }
    
    /* Returns the key of the idea with the highest utility. Returns -1 if no idea exists
@@ -76,10 +80,10 @@ public class AICore {
    // Considers all available spots on the current board, and stores a list of ideas.
    public void consider(String player) {
       this.player = player;
-      if (player.equals("X")) {
-         oppo = "O";
+      if (player.equals(P1)) {
+         oppo = P2;
       } else {
-         oppo = "X";
+         oppo = P1;
       }
       ideas = new ArrayList<Idea>();
       possibleSpots = availableSpots();
@@ -90,10 +94,10 @@ public class AICore {
          if (c > 0) {
             resetAll();
             try {
-               /* As a matter of fact I only constructone list of ideas, but eventually there will
+               /* As a matter of fact I only construct one list of ideas, but eventually there will
                   be a tree, because the Idea class does the job. Seems like I let the tree "grow". */
                Idea temp = new Idea(output, key, board, player, STARTING_LEVEL, level);
-               System.out.println("1 idea added, key: " + key + " value: " + temp.getValue());
+               System.out.println("1 idea added, key: " + key + " utility: " + temp.getUtility());
                ideas.add(temp);
             } catch (Exception error) {
                System.out.println(error);
@@ -101,6 +105,7 @@ public class AICore {
          }
       }
       Collections.sort(ideas);
+      recordAI(ideas);
    }
    
    // Cleans all assumptions so far.
@@ -120,4 +125,15 @@ public class AICore {
       }
       return temp;
    }
+   
+   // Records the AI tree.
+   private void recordAI(List<Idea> list) {
+      if (!list.isEmpty()) {
+         for (Idea i: list) {
+            i.recordAI();
+            recordAI(i.nextLevel);
+         }
+      }
+   }
+   
 }

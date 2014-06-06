@@ -10,22 +10,21 @@ import java.io.*;
 import java.awt.Graphics;
 import java.awt.Color;
 
-public class Board {
+public class Board implements BasicInfo {
    // stores the basic info about the board
    private static final int HEIGHT = 8;
    private static final int WIDTH = 8;
    // the key is conctructed as y * 10 + x
    public static Map<Integer, Point> board;
    
-   
-   // stores the signs for two players
-   private static final String P0 = " ";
-   private static final String P1 = "X";
-   private static final String P2 = "O";
-   
    //private OutputPanel panel;
    private static OutputPanel op;
    private Graphics g;
+   
+   // for....some testing codes
+   public Board() {
+      this(null);
+   }
    
    // for PvP
    public Board(OutputPanel op) {
@@ -54,7 +53,9 @@ public class Board {
          board.get(i).resetAll();
       }
       this.op = op;
-      g = op.getGraphics();
+      if (op != null) {
+         g = op.getGraphics();
+      }
    }
    
    
@@ -85,12 +86,12 @@ public class Board {
             oScore++;
          }
       }
-      System.out.println("X:  " + xScore + "    O:  " + oScore);
+      System.out.println(P1 + "  " + xScore + "    " + P2 + ":  " + oScore);
       if (end) {
          if (xScore > oScore) {
-            System.out.println("Player X wins, scoring " + xScore + ".");
+            System.out.println("Player " + P1 + " wins, scoring " + xScore + ".");
          } else if (xScore < oScore) {
-            System.out.println("Player O wins, scoring " + oScore + ".");
+            System.out.println("Player " + P2 + " wins, scoring " + oScore + ".");
          } else {
             System.out.println("Draw.");
          }
@@ -156,9 +157,9 @@ public class Board {
       }
       String result;
       if (xScore > oScore) {
-         result = "Player X wins, scoring " + xScore + ".";
+         result = "Player 1 wins, scoring " + xScore + ".";
       } else if (xScore < oScore) {
-         result = "Player O wins, scoring " + oScore + ".";
+         result = "Player 2 wins, scoring " + oScore + ".";
       } else {
          result = "Draw.";
       }
@@ -176,7 +177,7 @@ public class Board {
    public void printMatrix() {
       for (int i = 1; i <= HEIGHT; i++) {
          for (int j = 1; j <= WIDTH; j++) {
-            System.out.print("[  ]");
+            System.out.print("[" + (i * 10 + j) + "]");
          }
          System.out.println();
       }

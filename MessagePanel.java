@@ -30,13 +30,16 @@ public class MessagePanel extends JPanel {
    private static final Font FONT = new Font("Serief", Font.BOLD, 8);
    private boolean playAgain;
    
+   private boolean end;
+   
    public MessagePanel() {
+      end = false;
       playAgain = false;
       setBorder(BorderFactory.createLineBorder(Color.black));
       setBackground(BG_COLOR);
       setLayout(new FlowLayout(FlowLayout.CENTER, 120, 40));
-      player1 = new JLabel(":    02");
-      player2 = new JLabel(":    02");
+      player1 = new JLabel(":    ");
+      player2 = new JLabel(":    ");
       
       
       add(player1);
@@ -53,19 +56,24 @@ public class MessagePanel extends JPanel {
    }
    
    public void updateFinal(String message) {
-      //removeAll();
-      
+      end = true;
+      remove(player1);
+      try { Thread.sleep(10); } catch (InterruptedException e) {}
+      remove(player2);
+      removeAll();
       try { Thread.sleep(10); } catch (InterruptedException e) {}
       JLabel finalMessage = new JLabel(message);
       again = new JButton("Play again?");
       add(finalMessage);
       add(again);
+      
       again.setFont(FONT);
       again.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             playAgain = true;
          }
       });
+      
    }
    
    public void updateScore(int xScore, int oScore) {
@@ -78,6 +86,10 @@ public class MessagePanel extends JPanel {
       g.fillOval(56, 32, 36, 36);
       g.setColor(Color.WHITE);
       g.fillOval(212, 32, 36, 36);
+      if (end) {
+         g.setColor(BG_COLOR);
+         g.fillRect(0, 32, PANEL_WIDTH, 36);
+      }
    }
    
    public boolean again() {

@@ -12,7 +12,7 @@ Sha Lai
 
 import java.util.*;
 
-public class Point {
+public class Point implements BasicInfo {
    private int x;           // stores the x coordinate
    private int y;           // stores the y coordinate
    private int w;           // stores the weight of the spot
@@ -21,25 +21,38 @@ public class Point {
    
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /*                         Fields Used to Assign Weight for Spots                                */
-
-   private static Set<Integer> corners;
-   private static Set<Integer> preCorners;
-   private static Set<Integer> sides;
-   private static Set<Integer> preSides;
-   private static Set<Integer> inner;
+   
+   /*
+   
+   The Othello uses a 8 * 8 chess board, so considering it's symmetric about the origin, I choose
+   only 10 spots to analyze, and then apply the values to the rest. The chosen ones:
+   
+   11 12 13 14
+      22 23 24
+         33 34
+            44
+   
+   */
+   
    
    private static final int[] C = {11, 18, 81, 88};
    private static final int[] P_C = {12, 17, 21, 22, 27, 28, 71, 72, 77, 78, 82, 87};
-   private static final int[] S = {13, 14, 15, 16, 38, 48, 58, 68, 86, 85, 84, 83, 61, 51, 41, 31};
-   private static final int[] P_S = {23, 24, 25, 26, 37, 47, 57, 67, 76, 75, 74, 73, 62, 52, 42, 32};
-   private static final int[] I = {33, 34, 35, 36, 46, 56, 66, 65, 64, 63, 53, 43, 33};
+   private static final int[] S_1 = {13, 16, 31, 38, 61, 68, 83, 86};
+   private static final int[] S_2 = {14, 15, 41, 48, 51, 58, 84, 85};
+   private static final int[] P_S = {23, 24, 25, 26, 32, 37, 42, 47, 52, 57, 62, 67, 73, 74, 75, 76};
+   private static final int[] I = {33, 33, 34, 35, 36, 43, 46, 53, 56, 63, 64, 65, 66};
+   private static final int[] O = {44, 45, 54, 55};
+   public static final int[][] SPOT_GROUP = {C, P_C, S_1, S_2, P_S, I, O};
    
    // store weights of each area
    private static final int CORNER = 99;
-   private static final int PRECORNER = -20;
-   private static final int SIDE = 5;
+   private static final int PRECORNER = -50;
+   private static final int SIDE_1 = 40;
+   private static final int SIDE_2 = 20;
    private static final int PRESIDE = 1;
-   private static final int INNER = 2;
+   private static final int INNER = 10;
+   private static final int ORIGIN = 4;
+   public static final int[] WEIGHT_GROUP = {CORNER, PRECORNER, SIDE_1, SIDE_2, PRESIDE, INNER, ORIGIN};
    
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -54,49 +67,21 @@ public class Point {
       this.y = y;
       this.level = level;
       point = new String[level + 1];
-      point[0] = "[ ]";
+      point[0] = "[" + P0 + "]";
       
-      // initializes 5 areas
-      corners = new TreeSet<Integer>();
-      preCorners = new TreeSet<Integer>();
-      sides = new TreeSet<Integer>();
-      preSides = new TreeSet<Integer>();
-      inner = new TreeSet<Integer>();
-      
-      assignGroups();
+      setWeight();
    }
    
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*                              Private Methods for Grouping Spots                               */
-
-   private void assignGroups() {     
-      add(corners, C);
-      add(preCorners, P_C);
-      add(sides, S);
-      add(preSides, P_S);
-      add(inner, I);
-      setWeight();
-   }
-   
-   private void add(Set<Integer> set, int[] i) {
-      for (int j: i) {
-         set.add(j);
-      }
-   }
    
    private void setWeight() {
       int k = y * 10 + x;
-      if (corners.contains(k)) {
-         w = CORNER;
-      } else if (preCorners.contains(k)) {
-         w = PRECORNER;
-      } else if (sides.contains(k)) {
-         w = SIDE;
-      } else if (preSides.contains(k)) {
-         w = PRESIDE;
-      } else {
-         w = INNER;
+      for (int i = 0; i < SPOT_GROUP.length; i++) {
+         if (Arrays.binarySearch(SPOT_GROUP[i], k) > -1) {
+            w = WEIGHT_GROUP[i];
+         }
       }
    }
 

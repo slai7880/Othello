@@ -9,7 +9,7 @@ Sha Lai
 
 import java.util.*;
 
-public class Analyzer {
+public class Analyzer implements BasicInfo {
    private static Map<Integer, Point> board;
    private String player;
    private String oppo;
@@ -55,10 +55,10 @@ public class Analyzer {
    }
    
    private void setPlayer(String player) {
-      if (player.equals("X")) {
-         oppo = "O";
+      if (player.equals(P1)) {
+         oppo = P2;
       } else {
-         oppo = "X";
+         oppo = P1;
       }
    }
    

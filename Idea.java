@@ -5,8 +5,8 @@ examines the very first step. The basic approach for this AI is the min-max appr
 that is just an abstract approach. What really makes building AI hard is to determine how many
 variables should the computer consider, and how to assign weights for each one. For now this
 AI s*cks, it only consider the weight of each spot and the opponent's mobility. Plus it does not
-prune the tree. If the user sets the level higher than 5, the system will be too busy(the AI record
-file will be like 10M). Therefore I will keep updating it.
+prune the tree. If the user sets the level higher than 5, the system will be too busy. Therefore
+I will keep updating it.
 
 Sha Lai
 
@@ -16,6 +16,7 @@ import java.util.*;
 import java.io.*;
 
 public class Idea implements Comparable<Idea>, BasicInfo {
+   // general fields
    public List<Idea> nextLevel;
    private int key;
    private static Map<Integer, Point> board;
@@ -23,29 +24,46 @@ public class Idea implements Comparable<Idea>, BasicInfo {
    private String player;
    private String oppo;
    private List<Integer> oppoSpaces;
+   private List<Integer> nextUtilityList;
+   private List<Integer> nextSortedUtilityList;
    private static Analyzer analyzer;
-   private Random r;
    private static PrintStream output;
+   private static String givenPlayer; // stores the side the computer is holding
    
    // strategy variables
    private static int setLevel;    // the maximum level
    public int currentLevel;
    private int pieceWeightSum;     // the sum of weight of all occupied spots for the player
    private int oppoMobility;       // the opponent's mobility (number of spots available)
-   private int value;              // value = pieceWeightSum - oppoMObility
-   private int nextValue;          // the highest value in the next level
    private int utility;             // utility = value + nextValue
    private int nextUtility;
    
+   // fields for pruning the tree
+   private static final boolean AB_PRUNING = true;  // applies alpha-beta pruning?
+   private boolean stop;
+   private int alpha, beta;         // floor, ceiling
+   private int oldAlpha, oldBeta;
+   private String node;
+   private String nextNode;
+   private List<Integer> cutOff;  // stores the keys of points that are cut off
+   
    // Constructs a new Idea object, and automatically builds up a tree structure.
-   public Idea(PrintStream output, int key, Map<Integer, Point> board, String player, int currentLevel, int setLevel) {
+   public Idea(PrintStream output, int key, Map<Integer, Point> board, String player,
+               int currentLevel, int setLevel, String givenPlayer, String node, int alpha, int beta) {
+      stop = false;
       this.output = output;
       this.key = key;
       this.board = board;
       this.player = player;
       this.currentLevel = currentLevel;
       this.setLevel = setLevel;
-      r = new Random();
+      this.givenPlayer = givenPlayer;
+      this.node = node;
+      this.alpha = alpha;
+      this.beta = beta;
+      oldAlpha = alpha;
+      oldBeta = beta;
+      cutOff = new ArrayList<Integer>();
       nextLevel = new ArrayList<Idea>();
       if (player.equals(P1)) {
          oppo = P2;
@@ -55,40 +73,52 @@ public class Idea implements Comparable<Idea>, BasicInfo {
       analyzer = new Analyzer(this.board);
       oppoMobility = 0;
       
+      nextUtilityList = new ArrayList<Integer>();
+      nextSortedUtilityList = new ArrayList<Integer>();
       
-      
-      nextValue = 0;
-      nextUtility = 0; // pending
       board.get(key).assume(player, currentLevel);
-      analyzer.testAssumption(player, key, false, true, currentLevel);
+      analyzer.attemp(player, key, currentLevel);
       recordBoard();
-      oppoMobility = computeOppoMobility();
       
+      develop();
+   }
+   
+   private void develop() {
       // the tree is growing
       if (currentLevel < setLevel) {
+         oppoMobility = computeOppoMobility();
          if (oppoMobility != 0) { // opponent has a spot to move, switch to the opponent
-            for (int i: oppoSpaces) {
-               nextLevel.add(new Idea(output, i, this.board, oppo, this.currentLevel + 1, this.setLevel));
+            nextNode = getNextNodeName();
+            int i = 0;
+            while (!stop && i < oppoSpaces.size()) {
+               int spot = oppoSpaces.get(i);
+               Idea temp = new Idea(output, spot, board, oppo, currentLevel + 1, setLevel, givenPlayer, nextNode, alpha, beta);
+               if (AB_PRUNING) {  // can be disabled at the top
+                  pruneTheTree(temp, i);
+               }
+               nextLevel.add(temp);
                reset(currentLevel + 1);
+               i++;
             }
-         } else { // oppoent doesn't have a spot to move, switch back to the current player
+         } else {                 // oppoent doesn't have a spot to move, do not switch
             List<Integer> playerSpaces = availableSpots(player);
             for (int i: playerSpaces) {
-               nextLevel.add(new Idea(output, i, this.board, player, this.currentLevel, this.setLevel));
+               nextLevel.add(new Idea(output, i, board, player, currentLevel, setLevel, givenPlayer, node, alpha, beta));
                reset(currentLevel + 1);
             }
          }
+         
+         saveUtilities(nextUtilityList);
          Collections.sort(nextLevel);
+         saveUtilities(nextSortedUtilityList);
          
          if (nextLevel.size() > 0) {
-            nextUtility = nextLevel.get(nextLevel.size() - 1).computeUtility();
-            utility = nextUtility;
+            utility = nextLevel.get(nextLevel.size() - 1).utility;
          }
-      } else {
+      } else {    // reaches the end of the tree
          pieceWeightSum = computeWeightSum();
          oppoMobility = computeOppoMobility();
-         value = pieceWeightSum - oppoMobility / 2;
-         utility = value;
+         utility = pieceWeightSum - oppoMobility / 2;
       }
    }
    
@@ -96,9 +126,9 @@ public class Idea implements Comparable<Idea>, BasicInfo {
    private int computeWeightSum() {
       int sum = 0;
       for (Point point: board.values()) {
-         if (point.getAssumption(currentLevel).equals(player)) {
+         if (point.getAssumption(currentLevel).equals(givenPlayer)) {
             sum += point.getWeight();
-         } else if(point.getAssumption(currentLevel).equals(oppo)) {
+         } else if(!point.getAssumption(currentLevel).equals(P0)) {
             sum -= point.getWeight();
          }
       }
@@ -109,11 +139,6 @@ public class Idea implements Comparable<Idea>, BasicInfo {
    private int computeOppoMobility() {
       oppoSpaces = availableSpots(oppo);
       return oppoSpaces.size();
-   }
-   
-   // Minus applies for the opponent.
-   private int computeValue() {
-      return (int) Math.pow(-1, currentLevel) * value;
    }
    
    // Minus applies for the oppoent.
@@ -127,18 +152,22 @@ public class Idea implements Comparable<Idea>, BasicInfo {
    }
    
    public int compareTo(Idea other) {
-      return utility - other.utility;
+      if (node.equals(MIN)) {
+         return utility - other.utility;
+      } else {
+         return other.utility - utility;
+      }
    }
    
    public String toString() {
-      return "key: " + key + "  weight sum: " + pieceWeightSum;
+      return "" + key;
    }
    
    private List<Integer> availableSpots(String s) {
       List<Integer> list = new ArrayList<Integer>();
       for (int i: board.keySet()) {
          if (board.get(i).getAssumption(currentLevel).equals(" ")) {
-            if (analyzer.testAssumption(s, i, false, false, currentLevel) > 0) {
+            if (analyzer.testAssumption(s, i, currentLevel) > 0) {
                list.add(i);
             }
          }
@@ -146,9 +175,6 @@ public class Idea implements Comparable<Idea>, BasicInfo {
       return list;
    }
    
-   public int getValue() {
-      return value;
-   }
    
    public int getUtility() {
       return utility;
@@ -167,19 +193,30 @@ public class Idea implements Comparable<Idea>, BasicInfo {
    // Records the AI.
    public void recordAI() {
       output.println();
+      output.println("Current node:          " + node);
       output.println("Considering spot:      " + key);
       output.println("Current player:        " + player);
       output.println("Current level:         " + currentLevel);
-      output.println("pieceWeightSum =       " + pieceWeightSum);
+      String tempMessa = "";
+      if (currentLevel < setLevel) {
+         tempMessa = "N/A";
+      } else {
+         tempMessa += pieceWeightSum;
+      }
+      output.println("pieceWeightSum =       " + tempMessa);
       output.println("Oppo's Mobility =      " + oppoMobility);
       output.println("Oppo's Spaces =        " + oppoSpaces);
-      output.println("Value =                " + value);
       output.println("nextLevel.size() =     " + nextLevel.size());
+      output.println("nextLevel:             " + nextLevel);
+      output.println("nextLevel's utility:   " + nextUtilityList);
+      output.println("nextLevel's sorted uti:" + nextSortedUtilityList);
       output.println("utility =              " + utility);
-      List<Integer> list = new ArrayList<Integer>();
-         for (Idea idea: nextLevel) {
-            list.add(idea.computeValue());
-         }
+      output.println("oldAlpha =             " + oldAlpha);
+      output.println("oldBeta =              " + oldBeta);
+      output.println("alpha =                " + alpha);
+      output.println("beta =                 " + beta);
+      output.println("stop =                 " + stop);
+      output.println("cut-off list:          " + cutOff);
       for (int y = 0; y < HEIGHT; y++) {
          for (int x = 0; x < WIDTH; x++) {
             //System.out.print(board.get(i * 10 + j).assumedPoint(currentLevel));
@@ -193,8 +230,60 @@ public class Idea implements Comparable<Idea>, BasicInfo {
    }
    
    private void reset(int level) {
-      for (int i: board.keySet()) {
-         board.get(i).reset(level);
+      for (Point p: board.values()) {
+         p.reset(level);
+      }
+   }
+   
+   public int getAlpha() {
+      return alpha;
+   }
+   
+   public int getBeta() {
+      return beta;
+   }
+   
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/*                                       Bagging Methods                                         */
+   
+   // The following methods are pulled out in order to make it a little bit cozier.
+   
+   private String getNextNodeName() {
+      if (node.equals(MAX)) {
+         return MIN;
+      }
+      return MAX;
+   }
+   
+   /*
+   
+   Alpha_beta pruning:
+   
+   If this is a MAX node, check if the current beta is less than the next node's utility,
+   stops exploring if so, in any case updates the alpha.
+   
+   If this is a MIN node, check if the current alpha is greater than the next node's utility,
+   stops exploring if so, in any case updates the beta.
+   
+   */
+   private void pruneTheTree(Idea temp, int i) {
+      if (node.equals(MAX)) {  // if this is a max node
+         stop = beta < temp.utility;
+         alpha = Math.max(alpha, temp.utility);
+      } else {                 // if this is a min node
+         stop = alpha > temp.utility;
+         beta = Math.min(beta, temp.utility);
+      }
+      if (stop) {
+         for (int j = i + 1; j < oppoSpaces.size(); j++) {
+            cutOff.add(oppoSpaces.get(j));
+         }
+      }
+   }
+   
+   private void saveUtilities(List<Integer> list) {
+      for (Idea i: nextLevel) {
+         list.add(i.utility);
       }
    }
 }

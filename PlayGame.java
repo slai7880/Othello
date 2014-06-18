@@ -17,13 +17,11 @@ import javax.swing.*;
 import java.awt.Color;
 import java.awt.BorderLayout;
 
-public class PlayGame {
+public class PlayGame implements BasicInfo {
    private Board b;
    private Scanner console;
    private int stepCount;
    private String player;
-   private static final String P1 = "X";
-   private static final String P2 = "O";
    private Analyzer analyzer;
    private static Map<Integer, Point> board;
    private static final int MAX_LEVEL = 10;
@@ -88,7 +86,7 @@ public class PlayGame {
       analyzer = new Analyzer(board);
    }
    
-   // for PvP
+   // for PvP (pending)
    public void playPvP() {
       while (hasNextMove(true)) {
          b.printBoard(false);
@@ -112,6 +110,7 @@ public class PlayGame {
          op.setClicked(clicked);
          boolean aiGo = aiFirst;
          b.printBoard(false);
+         mp.updateScore(2, 2);
          while (hasNextMove(true)) {
             boolean humanGo = true;
             if (aiGo) {
@@ -168,7 +167,7 @@ public class PlayGame {
    
    public void assignMove(int y, int x) {
       int key = y * 10 + x;
-      if (analyzer.checkKey(key) && board.get(key).getPlayer().equals(" ") && analyzer.testMove(player, key, true) > 0) {
+      if (analyzer.checkKey(key) && board.get(key).getPlayer().equals(" ") && analyzer.move(player, key) > 0) {
          board.get(key).place(player);
          stepCount++;
       } else {
@@ -182,24 +181,24 @@ public class PlayGame {
       List<Integer> possibleSpots = b.availableSpots();
       boolean swap = false;
       boolean playerGo = false;
-      if (!possibleSpots.isEmpty()) {
+      if (!possibleSpots.isEmpty()) {   // excuted if there exists at least one blank spot
          for (int i: possibleSpots) {
-            if (analyzer.testMove(player, i, false) > 0) {
+            if (analyzer.testMove(player, i) > 0) {
                swap = false;
                playerGo = true;
             }
          }
-      }
-      if (doubleTest && !playerGo) {
-         String oppo;
-         if (player.equals(P1)) {
-            oppo = P2;
-         } else {
-            oppo = P1;
-         }
-         for (int i: possibleSpots) {
-            if (analyzer.testMove(oppo, i, false) > 0) {
-               swap = true;
+         if (doubleTest && !playerGo) { // excuted if the current player cannot make the next move
+            String oppo;
+            if (player.equals(P1)) {
+               oppo = P2;
+            } else {
+               oppo = P1;
+            }
+            for (int i: possibleSpots) {
+               if (analyzer.testMove(oppo, i) > 0) {
+                  swap = true;
+               }
             }
          }
       }
@@ -224,7 +223,6 @@ public class PlayGame {
       }
       try { Thread.sleep(10); } catch (InterruptedException e) {}
       mp.reset();
-      System.out.println("mp.reset() reached");
       try { Thread.sleep(10); } catch (InterruptedException e) {}
    }
    
@@ -246,6 +244,7 @@ public class PlayGame {
       frame = new JFrame("Othello");
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       startTitlePanel(false);
+      frame.setResizable(false);
       frame.setVisible(true);
    }
    

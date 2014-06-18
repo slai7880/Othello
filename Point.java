@@ -54,6 +54,12 @@ public class Point implements BasicInfo {
    private static final int ORIGIN = 4;
    public static final int[] WEIGHT_GROUP = {CORNER, PRECORNER, SIDE_1, SIDE_2, PRESIDE, INNER, ORIGIN};
    
+   static {
+      for (int[] i: SPOT_GROUP) {
+         Arrays.sort(i);
+      }
+   }
+   
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
    // Constructs a point with no AI's level, for PvP (not included yet) only.

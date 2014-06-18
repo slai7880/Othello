@@ -32,8 +32,18 @@ public class Analyzer implements BasicInfo {
       this.board = board;
    }
    
-   // Examines whether or the human's move is legal. True if the number is positive.
-   public int testMove(String player, int key, boolean flip) {
+   /* Examines whether or the human's move is legal. True if the returned number is positive.
+      Also flips the disks of the opponent. */
+   public int move(String player, int key) {
+      return testMove(player, key, true);
+   }
+   
+   // Examines whether or the human's move is legal. True if the returned number is positive.
+   public int testMove(String player, int key) {
+      return testMove(player, key, false);
+   }
+   
+   private int testMove(String player, int key, boolean flip) {
       aiOn = false;
       this.player = player;
       this.key = key;
@@ -43,7 +53,15 @@ public class Analyzer implements BasicInfo {
    }
    
    // Let the AI makes an assumption.
-   public int testAssumption(String player, int key, boolean getWeight, boolean assume, int level) {
+   public void attemp(String player, int key, int level) {
+      testAssumption(player, key, false, true, level);
+   }
+   
+   public int testAssumption(String player, int key, int level) {
+      return testAssumption(player, key, false, false, level);
+   }
+   
+   private int testAssumption(String player, int key, boolean getWeight, boolean assume, int level) {
       aiOn = true;
       this.player = player;
       this.key = key;

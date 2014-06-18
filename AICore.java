@@ -6,8 +6,8 @@ utility to assign. If there is a tie, it would randomly choose one. Also it gene
 to help further study of AI's strategy.
 
 The appproaches that this AI has so far:
-1. (0.6)Min-Max Search
-2. (0.4)Computing the Opponent's Mobility
+1. Min-Max Search
+2. Computing the Opponent's Mobility
 
 Sha Lai
 
@@ -88,15 +88,21 @@ public class AICore implements BasicInfo {
       ideas = new ArrayList<Idea>();
       possibleSpots = availableSpots();
       Iterator<Integer> itr = possibleSpots.iterator();
+      int alpha = DEFAULT_ALPHA;
+      int beta = DEFAULT_BETA;
       while (itr.hasNext()) {
          int key = itr.next();
-         int c = analyzer.testMove(player, key, false);
+         int c = analyzer.testMove(player, key);
          if (c > 0) {
             resetAll();
             try {
                /* As a matter of fact I only construct one list of ideas, but eventually there will
                   be a tree, because the Idea class does the job. Seems like I let the tree "grow". */
-               Idea temp = new Idea(output, key, board, player, STARTING_LEVEL, level);
+               Idea temp = new Idea(output, key, board, player, STARTING_LEVEL, level, player, MIN, alpha, beta);
+               alpha = temp.getAlpha();
+               beta = temp.getBeta();
+               System.out.println("alpha = " + alpha);
+               System.out.println("beta =  " + beta);
                System.out.println("1 idea added, key: " + key + " utility: " + temp.getUtility());
                ideas.add(temp);
             } catch (Exception error) {
